@@ -1,145 +1,438 @@
-const pokedex = async (pokeName) => {
-  try{
-    const res = await fetch(`https://pokeapi-proxy.freecodecamp.rocks/api/pokemon/${pokeName.toLowerCase()}`);
-    if(!res.ok){
-      throw new Error("Thats not a pokemon you @#$%^&*!");
-    }
-    const data = await res.json();
-    console.log(data);
-    displayPokemon(data);
-  } catch(error){
-    alert("Pokémon not found")
-    console.error('Error', error)
-  }
-};
+const API_BASE = "https://pokeapi.co/api/v2";
+
+// ── Request cancellation ──────────────────────────────────────────────────────
+// Tracks the current request so rapid clicks cancel the previous one
+let currentRequestId = 0;
+
+// ── Type data ────────────────────────────────────────────────────────────────
 
 const typeColors = {
-  normal: "#A8A77A",
-  fire: "#EE8130",
-  water: "#6390F0",
-  electric: "#F7D02C",
-  grass: "#7AC74C",
-  ice: "#96D9D6",
-  fighting: "#C22E28",
-  poison: "#A33EA1",
-  ground: "#E2BF65",
-  flying: "#A98FF3",
-  psychic: "#F95587",
-  bug: "#A6B91A",
-  rock: "#B6A136",
-  ghost: "#735797",
-  dragon: "#6F35FC",
-  dark: "#705746",
-  steel: "#B7B7CE",
-  fairy: "#D685AD"
+  normal: "#A8A77A", fire: "#EE8130", water: "#6390F0", electric: "#F7D02C",
+  grass: "#7AC74C", ice: "#96D9D6", fighting: "#C22E28", poison: "#A33EA1",
+  ground: "#E2BF65", flying: "#A98FF3", psychic: "#F95587", bug: "#A6B91A",
+  rock: "#B6A136", ghost: "#735797", dragon: "#6F35FC", dark: "#705746",
+  steel: "#B7B7CE", fairy: "#D685AD"
 };
 
 const typeIcons = {
-  normal: `<img class="type-icon" src="icons/normal.svg" alt="Normal">`,
-  fire: `<img class="type-icon" src="icons/fire.svg" alt="Fire">`,
-  water: `<img class="type-icon" src="icons/water.svg" alt="Water">`,
+  normal:   `<img class="type-icon" src="icons/normal.svg"   alt="Normal">`,
+  fire:     `<img class="type-icon" src="icons/fire.svg"     alt="Fire">`,
+  water:    `<img class="type-icon" src="icons/water.svg"    alt="Water">`,
   electric: `<img class="type-icon" src="icons/electric.svg" alt="Electric">`,
-  grass: `<img class="type-icon" src="icons/grass.svg" alt="Grass">`,
-  ice: `<img class="type-icon" src="icons/ice.svg" alt="Ice">`,
+  grass:    `<img class="type-icon" src="icons/grass.svg"    alt="Grass">`,
+  ice:      `<img class="type-icon" src="icons/ice.svg"      alt="Ice">`,
   fighting: `<img class="type-icon" src="icons/fighting.svg" alt="Fighting">`,
-  poison: `<img class="type-icon" src="icons/poison.svg" alt="Poison">`,
-  ground: `<img class="type-icon" src="icons/ground.svg" alt="Ground">`,
-  flying: `<img class="type-icon" src="icons/flying.svg" alt="Flying">`,
-  psychic: `<img class="type-icon" src="icons/psychic.svg" alt="Psychic">`,
-  bug: `<img class="type-icon" src="icons/bug.svg" alt="Bug">`,
-  rock: `<img class="type-icon" src="icons/rock.svg" alt="Rock">`,
-  ghost: `<img class="type-icon" src="icons/ghost.svg" alt="Ghost">`,
-  dragon: `<img class="type-icon" src="icons/dragon.svg" alt="Dragon">`,
-  dark: `<img class="type-icon" src="icons/dark.svg" alt="Dark">`,
-  steel: `<img class="type-icon" src="icons/steel.svg" alt="Steel">`,
-  fairy: `<img class="type-icon" src="icons/fairy.svg" alt="Fairy">`
+  poison:   `<img class="type-icon" src="icons/poison.svg"   alt="Poison">`,
+  ground:   `<img class="type-icon" src="icons/ground.svg"   alt="Ground">`,
+  flying:   `<img class="type-icon" src="icons/flying.svg"   alt="Flying">`,
+  psychic:  `<img class="type-icon" src="icons/psychic.svg"  alt="Psychic">`,
+  bug:      `<img class="type-icon" src="icons/bug.svg"      alt="Bug">`,
+  rock:     `<img class="type-icon" src="icons/rock.svg"     alt="Rock">`,
+  ghost:    `<img class="type-icon" src="icons/ghost.svg"    alt="Ghost">`,
+  dragon:   `<img class="type-icon" src="icons/dragon.svg"   alt="Dragon">`,
+  dark:     `<img class="type-icon" src="icons/dark.svg"     alt="Dark">`,
+  steel:    `<img class="type-icon" src="icons/steel.svg"    alt="Steel">`,
+  fairy:    `<img class="type-icon" src="icons/fairy.svg"    alt="Fairy">`
 };
 
+// ── Form label prettifier ─────────────────────────────────────────────────────
+// Strips the base name and returns a clean label e.g. "venusaur-mega" → "MEGA"
+
+const getFormLabel = (baseName, fullName) => {
+  if (fullName === baseName) return "BASE";
+  const suffix = fullName.replace(`${baseName}-`, "");
+  return suffix
+    .replace(/-/g, " ")
+    .toUpperCase();
+};
+
+// Form badge color map
+const formColors = {
+  "mega":       "#8e44ad",
+  "mega-x":     "#2471a3",
+  "mega-y":     "#c0392b",
+  "gmax":       "#d35400",
+  "alola":      "#f1c40f",
+  "alolan":     "#f1c40f",
+  "galar":      "#1a5276",
+  "galarian":   "#1a5276",
+  "hisui":      "#b7950b",
+  "hisuian":    "#b7950b",
+  "paldea":     "#6d4c41",
+  "paldean":    "#6d4c41",
+  "origin":     "#5d6d7e",
+  "sky":        "#85c1e9",
+  "therian":    "#52be80",
+  "black":      "#212121",
+  "white":      "#7f8c8d",
+  "resolute":   "#e74c3c",
+  "primal":     "#922b21",
+};
+
+const getFormColor = (fullName, baseName) => {
+  const suffix = fullName.replace(`${baseName}-`, "").toLowerCase();
+  for (const [key, color] of Object.entries(formColors)) {
+    if (suffix.includes(key)) return color;
+  }
+  return "#546e7a"; // default slate
+};
+
+// ── Loading & error helpers ──────────────────────────────────────────────────
+
+const showLoading = () => {
+  document.getElementById("loading-overlay").style.display = "flex";
+  hideError();
+};
+
+const hideLoading = () => {
+  document.getElementById("loading-overlay").style.display = "none";
+};
+
+const showError = (msg = "Pokémon not found!") => {
+  const el = document.getElementById("error-message");
+  document.getElementById("error-text").textContent = msg;
+  el.style.display = "block";
+  el.style.animation = "none";
+  el.offsetHeight;
+  el.style.animation = "";
+};
+
+const hideError = () => {
+  document.getElementById("error-message").style.display = "none";
+};
+
+// ── Default / reset screen ───────────────────────────────────────────────────
 
 const showDefaultScreen = () => {
-  document.querySelectorAll(".stat").forEach(p => p.style.display = "none");
-  document.getElementById("sprite").style.display = "none";
-  document.getElementById("weight").style.display = "none";
-  document.getElementById("height").style.display = "none";
-  document.getElementById("types").style.display = "none";
+  document.getElementById("sprite").style.display         = "none";
+  document.getElementById("weight").style.display         = "none";
+  document.getElementById("height").style.display         = "none";
+  document.getElementById("types").style.display          = "none";
+  document.getElementById("evolution-section").style.display = "none";
+  document.getElementById("forms-section").style.display  = "none";
+  document.querySelectorAll(".stat-row").forEach(r => r.style.display = "none");
+  document.querySelectorAll("p.stat").forEach(p => p.style.display = "none");
 };
 
-const displayPokemon = (pokemon) => {
-  flashScreen();
-  document.querySelectorAll(".stat").forEach(p => p.style.display = "block");
-  document.getElementById("sprite").style.display = "block";
-  document.getElementById("weight").style.display = "block";
-  document.getElementById("height").style.display = "block";
-  document.getElementById("types").style.display = "flex";
-  
-  document.getElementById("pokemon-name").textContent = pokemon.name.toUpperCase();
-  document.getElementById("sprite").src = pokemon.sprites.front_default;
-  document.getElementById("pokemon-id").textContent = pokemon.id;
-  document.getElementById("weight").textContent = `Weight: ${pokemon.weight}`;
-  document.getElementById("height").textContent = `Height: ${pokemon.height}`;
-  
-  const typesContainer = document.getElementById("types");
-  typesContainer.innerHTML = ''; 
-  
-  pokemon.types.forEach(typeObj => {
-    const typeName = typeObj.type.name;
-    const typeElement = document.createElement('div');
-    typeElement.className = 'type-badge';
-    
-    const icon = typeIcons[typeName] || typeIcons.normal;
-    
-    typeElement.innerHTML = `
-      ${icon}
-      <span>${typeName.toUpperCase()}</span>
-    `;
-    
-    typeElement.style.backgroundColor = typeColors[typeName] || "#777";
-    
-    typesContainer.appendChild(typeElement);
+// ── Stat bar color based on value ────────────────────────────────────────────
+
+const statColor = (value) => {
+  if (value >= 90)  return "#27ae60";
+  if (value >= 60)  return "#f39c12";
+  if (value >= 35)  return "#e67e22";
+  return "#e74c3c";
+};
+
+// ── Stat bar renderer ────────────────────────────────────────────────────────
+
+const setStatBar = (barId, valId, rowId, value, maxVal = 255) => {
+  const row = document.getElementById(rowId);
+  const bar = document.getElementById(barId);
+  const val = document.getElementById(valId);
+
+  row.style.display = "flex";
+  val.textContent = value;
+  bar.style.backgroundColor = statColor(value);
+
+  bar.style.transition = "none";
+  bar.style.width = "0%";
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      bar.style.transition = "width 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94)";
+      bar.style.width = `${(value / maxVal) * 100}%`;
+    });
   });
-  
-  const hp = pokemon.stats.find(st => st.stat.name === 'hp').base_stat;
-  document.getElementById("hp").textContent = hp;
-  
-  const attack = pokemon.stats.find(st => st.stat.name === 'attack').base_stat;
-  document.getElementById("attack").textContent = attack;
-  
-  const defense = pokemon.stats.find(st => st.stat.name === 'defense').base_stat;
-  document.getElementById("defense").textContent = defense;
-  
-  const specialAttack = pokemon.stats.find(st => st.stat.name === 'special-attack').base_stat;
-  document.getElementById("special-attack").textContent = specialAttack;
-  
-  const specialDefense = pokemon.stats.find(st => st.stat.name === 'special-defense').base_stat;
-  document.getElementById("special-defense").textContent = specialDefense;
-  
-  const speed = pokemon.stats.find(st => st.stat.name === 'speed').base_stat;
-  document.getElementById("speed").textContent = speed;
 };
 
-// Search button click
-document.getElementById("search-button").addEventListener("click", () => {
-  const pokemonName = document.getElementById("search-input").value;
-  if (pokemonName) {
-    pokedex(pokemonName);
-  } 
-});
+// ── Forms ────────────────────────────────────────────────────────────────────
 
-document.getElementById("search-input").addEventListener("keypress", (e) => {
-  if (e.key === "Enter") {
-    const pokemonName = document.getElementById("search-input").value;
-    if (pokemonName) {
-      pokedex(pokemonName);
+let currentBaseName = ""; // track base name for form labels
+
+const displayForms = async (pokemonId, currentFormName) => {
+  const section  = document.getElementById("forms-section");
+  const container = document.getElementById("forms-list");
+  container.innerHTML = "";
+
+  try {
+    const speciesRes = await fetch(`${API_BASE}/pokemon-species/${pokemonId}`);
+    if (!speciesRes.ok) throw new Error("Species fetch failed");
+    const speciesData = await speciesRes.json();
+
+    const varieties = speciesData.varieties || [];
+    if (varieties.length <= 1) {
+      section.style.display = "none";
+      return;
+    }
+
+    // The base (default) name from species
+    currentBaseName = speciesData.name;
+
+    section.style.display = "block";
+
+    varieties.forEach(({ pokemon, is_default }) => {
+      const formName  = pokemon.name;
+      const label     = getFormLabel(currentBaseName, formName);
+      const color     = is_default ? "#2c3e50" : getFormColor(formName, currentBaseName);
+
+      const badge = document.createElement("button");
+      badge.className = "form-badge";
+      badge.textContent = label;
+      badge.style.backgroundColor = color;
+      if (formName === currentFormName) {
+        badge.classList.add("form-badge-active");
+      }
+
+      badge.addEventListener("click", () => {
+        // Load this form directly — forms use their full slug as the pokemon name
+        pokedexForm(formName, pokemonId);
+      });
+
+      container.appendChild(badge);
+    });
+
+  } catch (err) {
+    console.warn("Could not load forms:", err);
+    section.style.display = "none";
+  }
+};
+
+// ── pokedexForm: load a form without re-fetching evolution chain ──────────────
+
+const pokedexForm = async (formSlug, baseId) => {
+  showLoading();
+  try {
+    const pokeRes = await fetch(`${API_BASE}/pokemon/${formSlug}`);
+    if (!pokeRes.ok) throw new Error("Form not found");
+    const data = await pokeRes.json();
+
+    hideLoading();
+    flashScreen();
+    displayPokemon(data, baseId);
+
+    // Re-render form badges with updated active state, using the original base ID
+    displayForms(baseId, formSlug);
+
+  } catch (err) {
+    hideLoading();
+    showError("Form data not available!");
+    console.error("Form fetch error:", err);
+  }
+};
+
+// ── Evolution chain ──────────────────────────────────────────────────────────
+
+const flattenChain = (chainNode) => {
+  const current = chainNode.species.name;
+  if (!chainNode.evolves_to || chainNode.evolves_to.length === 0) {
+    return [current];
+  }
+  // Follow ALL branches (handles Eevee, split evos, etc.)
+  const branchResults = chainNode.evolves_to.map(next => flattenChain(next));
+  // Pick the longest branch as the main line
+  const longest = branchResults.reduce((a, b) => a.length >= b.length ? a : b);
+  // Include unique names from other branches too
+  const extras = branchResults.flat().filter(n => !longest.includes(n));
+  return [current, ...longest, ...extras];
+};
+
+const fetchEvolutionChain = async (pokemonId) => {
+  const speciesRes = await fetch(`${API_BASE}/pokemon-species/${pokemonId}`);
+  if (!speciesRes.ok) throw new Error("Species fetch failed");
+  const speciesData = await speciesRes.json();
+
+  const chainRes = await fetch(speciesData.evolution_chain.url);
+  if (!chainRes.ok) throw new Error("Chain fetch failed");
+  const chainData = await chainRes.json();
+
+  return flattenChain(chainData.chain);
+};
+
+const displayEvolutionChain = async (currentPokemonId, currentPokemonName) => {
+  const section   = document.getElementById("evolution-section");
+  const container = document.getElementById("evolution-chain");
+  container.innerHTML = "";
+
+  try {
+    const evoNames = await fetchEvolutionChain(currentPokemonId);
+
+    if (evoNames.length <= 1) {
+      section.style.display = "none";
+      return;
+    }
+
+    section.style.display = "block";
+
+    for (let i = 0; i < evoNames.length; i++) {
+      const name = evoNames[i];
+
+      let spriteUrl = "";
+      try {
+        const d = await resolvePokemon(name);
+        spriteUrl = d.sprites.front_default || "";
+      } catch (_) {}
+
+      const member = document.createElement("div");
+      member.className = "evo-member";
+      if (name === currentPokemonName) member.classList.add("current-pokemon");
+
+      member.innerHTML = `
+        ${spriteUrl ? `<img class="evo-sprite" src="${spriteUrl}" alt="${name}">` : ""}
+        <span class="evo-name">${name.toUpperCase()}</span>
+      `;
+
+      member.addEventListener("click", () => {
+        document.getElementById("search-input").value = name;
+        pokedex(name);
+      });
+
+      container.appendChild(member);
+
+      if (i < evoNames.length - 1) {
+        const arrow = document.createElement("span");
+        arrow.className = "evo-arrow";
+        arrow.textContent = "→";
+        container.appendChild(arrow);
+      }
+    }
+  } catch (err) {
+    console.warn("Could not load evolution chain:", err);
+    section.style.display = "none";
+  }
+};
+
+// ── Resolve a slug to a valid pokemon data object ────────────────────────────
+// Strategy: try direct fetch → species default variety → give up
+
+const resolvePokemon = async (slug, signal) => {
+  // 1. Try direct slug (works for most Pokémon and numeric IDs)
+  let res = await fetch(`${API_BASE}/pokemon/${slug}`, { signal });
+  if (res.ok) return res.json();
+
+  // 2. Try species endpoint to get the exact default variety URL
+  //    This handles Maushold, Basculin, Tatsugiri, Dudunsparce, etc.
+  const speciesRes = await fetch(`${API_BASE}/pokemon-species/${slug}`, { signal });
+  if (speciesRes.ok) {
+    const speciesData = await speciesRes.json();
+    const defaultVariety = speciesData.varieties?.find(v => v.is_default);
+    if (defaultVariety) {
+      const varRes = await fetch(defaultVariety.pokemon.url, { signal });
+      if (varRes.ok) return varRes.json();
     }
   }
-});
+
+  throw new Error("Not found");
+};
+
+// ── Main Pokédex fetch ───────────────────────────────────────────────────────
+
+const pokedex = async (pokeName) => {
+  // Cancel any in-flight request
+  currentRequestId++;
+  const thisRequestId = currentRequestId;
+  const controller = new AbortController();
+  const { signal } = controller;
+
+  showLoading();
+  try {
+    const slug = String(pokeName).toLowerCase().trim();
+    const data = await resolvePokemon(slug, signal);
+
+    // If a newer request started while we were fetching, discard this result
+    if (thisRequestId !== currentRequestId) return;
+
+    // Extract species ID from species URL (e.g. ".../pokemon-species/550/")
+    // This ensures forms like basculin-red-striped use ID 550, not a form-specific ID
+    const speciesUrl = data.species?.url || "";
+    const speciesIdMatch = speciesUrl.match(/pokemon-species\/([\d]+)/);
+    const speciesId = speciesIdMatch ? parseInt(speciesIdMatch[1]) : data.id;
+
+    hideLoading();
+    flashScreen();
+    displayPokemon(data, speciesId);
+
+    // Both forms and evo chain can fire in parallel
+    displayForms(speciesId, data.name);
+    displayEvolutionChain(speciesId, data.name);
+
+  } catch (error) {
+    // Ignore errors from cancelled (stale) requests
+    if (error.name === "AbortError") return;
+    hideLoading();
+    showError("Pokémon not found!");
+    console.error("Error:", error);
+  }
+};
+
+// ── Display Pokémon ──────────────────────────────────────────────────────────
+
+const displayPokemon = (pokemon, overrideId = null) => {
+  document.getElementById("sprite").style.display  = "block";
+  document.getElementById("weight").style.display  = "block";
+  document.getElementById("height").style.display  = "block";
+  document.getElementById("types").style.display   = "flex";
+  document.querySelectorAll("p.stat").forEach(p => p.style.display = "block");
+
+  document.getElementById("pokemon-name").textContent = pokemon.name.toUpperCase();
+  document.getElementById("sprite").src = pokemon.sprites.front_default;
+  document.getElementById("pokemon-id").textContent = overrideId ?? pokemon.id;
+  const weightKg = (pokemon.weight / 10).toFixed(1);
+  const heightM  = (pokemon.height / 10).toFixed(1);
+  document.getElementById("weight").textContent = `Weight: ${weightKg} kg`;
+  document.getElementById("height").textContent = `Height: ${heightM} m`;
+
+  const typesContainer = document.getElementById("types");
+  typesContainer.innerHTML = "";
+  pokemon.types.forEach(typeObj => {
+    const typeName = typeObj.type.name;
+    const typeElement = document.createElement("div");
+    typeElement.className = "type-badge";
+    typeElement.innerHTML = `${typeIcons[typeName] || typeIcons.normal}<span>${typeName.toUpperCase()}</span>`;
+    typeElement.style.backgroundColor = typeColors[typeName] || "#777";
+    typesContainer.appendChild(typeElement);
+  });
+
+  const getStat = (name) => pokemon.stats.find(st => st.stat.name === name).base_stat;
+  setStatBar("bar-hp",         "val-hp",         "row-hp",         getStat("hp"));
+  setStatBar("bar-attack",     "val-attack",     "row-attack",     getStat("attack"));
+  setStatBar("bar-defense",    "val-defense",    "row-defense",    getStat("defense"));
+  setStatBar("bar-sp-attack",  "val-sp-attack",  "row-sp-attack",  getStat("special-attack"));
+  setStatBar("bar-sp-defense", "val-sp-defense", "row-sp-defense", getStat("special-defense"));
+  setStatBar("bar-speed",      "val-speed",      "row-speed",      getStat("speed"));
+};
+
+// ── Flash effect ─────────────────────────────────────────────────────────────
 
 const flashScreen = () => {
   const flash = document.getElementById("flash");
   flash.style.opacity = 1;
-  setTimeout(() => {
-    flash.style.opacity = 0;
-  }, 100);
+  setTimeout(() => { flash.style.opacity = 0; }, 100);
 };
+
+// ── Search events ────────────────────────────────────────────────────────────
+
+document.getElementById("random-button").addEventListener("click", async () => {
+  const randomId = Math.floor(Math.random() * 1025) + 1;
+  document.getElementById("search-input").value = randomId;
+  // After loading, update input to show the Pokémon name instead of the ID
+  try {
+    const data = await resolvePokemon(String(randomId));
+    document.getElementById("search-input").value = data.name;
+  } catch (_) {}
+  pokedex(String(randomId));
+});
+
+document.getElementById("search-button").addEventListener("click", () => {
+  const val = document.getElementById("search-input").value.trim();
+  if (val) pokedex(val);
+});
+
+document.getElementById("search-input").addEventListener("keypress", (e) => {
+  if (e.key === "Enter") {
+    const val = document.getElementById("search-input").value.trim();
+    if (val) pokedex(val);
+  }
+});
+
+// ── Init ─────────────────────────────────────────────────────────────────────
 
 showDefaultScreen();

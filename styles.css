@@ -35,7 +35,7 @@ body {
 .search-box {
   display: flex;
   gap: 0.5rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 0.75rem;
   flex-wrap: wrap;
 }
 
@@ -82,6 +82,36 @@ button:active {
   box-shadow: 0 2px 0 #0f380f;
 }
 
+#random-button {
+  background-color: #2980b9;
+}
+
+#random-button:hover {
+  background-color: #1f618d;
+}
+
+/* ── Error message ────────────────────────────── */
+.error-message {
+  background-color: #e74c3c;
+  border: 3px solid #0f380f;
+  color: #fff;
+  font-size: 0.6rem;
+  padding: 0.6rem 1rem;
+  text-align: center;
+  margin-bottom: 0.75rem;
+  border-radius: 4px;
+  animation: shake 0.3s ease;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%       { transform: translateX(-6px); }
+  40%       { transform: translateX(6px); }
+  60%       { transform: translateX(-4px); }
+  80%       { transform: translateX(4px); }
+}
+
+/* ── Pokédex screen ───────────────────────────── */
 .pokedex-screen {
   background-color: #e0f8d0;
   border: 4px solid #0f380f;
@@ -92,7 +122,17 @@ button:active {
   display: flex;
   flex-direction: column;
   align-items: center;
+  position: relative;
+  max-height: 80vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: #0f380f #e0f8d0;
 }
+
+.pokedex-screen::-webkit-scrollbar { width: 6px; }
+.pokedex-screen::-webkit-scrollbar-track { background: #e0f8d0; }
+.pokedex-screen::-webkit-scrollbar-thumb { background-color: #0f380f; border-radius: 3px; }
 
 #pokemon-name {
   font-size: 1rem;
@@ -167,12 +207,250 @@ p {
   filter: drop-shadow(1px 1px 1px rgba(0,0,0,0.3));
 }
 
+/* ── Animated stat bars ───────────────────────── */
+.stat-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  max-width: 320px;
+  margin: 0.25rem 0;
+}
+
+.stat-label {
+  font-size: 0.55rem;
+  min-width: 48px;
+  text-align: right;
+  color: #0f380f;
+}
+
+.stat-bar-bg {
+  flex: 1;
+  height: 10px;
+  background-color: #b8d8a0;
+  border: 2px solid #0f380f;
+  border-radius: 3px;
+  max-height: 80vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: #0f380f #e0f8d0;
+}
+
+.pokedex-screen::-webkit-scrollbar { width: 6px; }
+.pokedex-screen::-webkit-scrollbar-track { background: #e0f8d0; }
+.pokedex-screen::-webkit-scrollbar-thumb { background-color: #0f380f; border-radius: 3px; }
+
+.stat-bar {
+  height: 100%;
+  width: 0%;                        /* starts at 0 for animation */
+  border-radius: 2px;
+  transition: width 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  background-color: #4caf50;        /* default; JS overrides per value */
+}
+
+.stat-val {
+  font-size: 0.55rem;
+  min-width: 26px;
+  text-align: left;
+  color: #0f380f;
+}
+
+/* ── Loading overlay ──────────────────────────── */
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(224, 248, 208, 0.92);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  gap: 1.2rem;
+}
+
+.loading-text {
+  font-size: 0.6rem;
+  color: #0f380f;
+  border: none;
+  background: none;
+  animation: blink 1s step-start infinite;
+}
+
+@keyframes blink {
+  50% { opacity: 0; }
+}
+
+/* Poké Ball loader */
+.pokeball {
+  width: 60px;
+  height: 60px;
+  position: relative;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+.pokeball-top {
+  position: absolute;
+  top: 0; left: 0;
+  width: 60px;
+  height: 30px;
+  background-color: #e74c3c;
+  border: 3px solid #0f380f;
+  border-radius: 30px 30px 0 0;
+}
+
+.pokeball-bottom {
+  position: absolute;
+  bottom: 0; left: 0;
+  width: 60px;
+  height: 30px;
+  background-color: #fff;
+  border: 3px solid #0f380f;
+  border-radius: 0 0 30px 30px;
+}
+
+.pokeball-mid {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 100%;
+  height: 6px;
+  background-color: #0f380f;
+  z-index: 1;
+}
+
+.pokeball-btn {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 16px;
+  height: 16px;
+  background-color: #fff;
+  border: 3px solid #0f380f;
+  border-radius: 50%;
+  z-index: 2;
+}
+
+
+/* ── Alternate forms ──────────────────────────── */
+.forms-section {
+  width: 100%;
+  margin-top: 0.75rem;
+  margin-bottom: 0.25rem;
+}
+
+.forms-title {
+  font-size: 0.6rem;
+  text-align: center;
+  margin-bottom: 0.6rem;
+  color: #0f380f;
+}
+
+.forms-list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.form-badge {
+  font-family: "Press Start 2P", monospace;
+  font-size: 0.5rem;
+  padding: 6px 10px;
+  border: 2px solid #0f380f;
+  border-radius: 6px;
+  color: #fff;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.4);
+  cursor: pointer;
+  transition: transform 0.15s, filter 0.15s;
+}
+
+.form-badge:hover {
+  transform: scale(1.08);
+  filter: brightness(1.15);
+}
+
+.form-badge-active {
+  outline: 3px solid #0f380f;
+  outline-offset: 2px;
+  transform: scale(1.05);
+}
+
+/* ── Evolution chain ──────────────────────────── */
+.evolution-section {
+  width: 100%;
+  margin-top: 1.5rem;
+  border-top: 3px solid #0f380f;
+  padding-top: 1rem;
+}
+
+.evo-title {
+  font-size: 0.6rem;
+  text-align: center;
+  margin-bottom: 0.75rem;
+  color: #0f380f;
+}
+
+.evolution-chain {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.evo-member {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  transition: transform 0.2s;
+  padding: 4px;
+}
+
+.evo-member:hover {
+  transform: scale(1.1);
+}
+
+.evo-member.current-pokemon {
+  background-color: #fff;
+  border: 2px solid #0f380f;
+  border-radius: 8px;
+}
+
+.evo-sprite {
+  width: 64px;
+  height: 64px;
+  image-rendering: pixelated;
+}
+
+.evo-name {
+  font-size: 0.4rem;
+  color: #0f380f;
+  text-align: center;
+  margin-top: 4px;
+  max-width: 70px;
+  word-break: break-all;
+}
+
+.evo-arrow {
+  font-size: 1.2rem;
+  color: #0f380f;
+  margin: 0 2px;
+  align-self: center;
+}
+
+/* ── Flash ────────────────────────────────────── */
 #flash {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
   background-color: white;
   opacity: 0;
   pointer-events: none;
@@ -180,85 +458,34 @@ p {
   z-index: 9999;
 }
 
+/* ── Responsive ───────────────────────────────── */
 @media (max-width: 600px) {
-  .title {
-    font-size: 1.2rem;
-    margin-bottom: 1rem;
-  }
-
-  .search-box {
-    flex-direction: column;
-  }
-
-  input[type="text"] {
-    min-width: 100%;
-    font-size: 0.6rem;
-  }
-
-  button {
-    width: 100%;
-    font-size: 0.6rem;
-  }
-
-  .pokedex-screen {
-    padding: 1rem;
-  }
-
-  #pokemon-name {
-    font-size: 0.85rem;
-  }
-
-  #sprite {
-    width: 120px;
-    height: 120px;
-  }
-
-  p {
-    font-size: 0.55rem;
-    padding: 6px 10px;
-  }
-
-  .type-badge {
-    font-size: 0.55rem;
-    padding: 5px 10px;
-  }
-
-  .type-icon {
-    width: 14px;
-    height: 14px;
-  }
+  .title { font-size: 1.2rem; margin-bottom: 1rem; }
+  .search-box { flex-direction: column; }
+  input[type="text"] { min-width: 100%; font-size: 0.6rem; }
+  button { width: 100%; font-size: 0.6rem; }
+  .pokedex-screen { padding: 1rem; }
+  #pokemon-name { font-size: 0.85rem; }
+  #sprite { width: 120px; height: 120px; }
+  p { font-size: 0.55rem; padding: 6px 10px; }
+  .type-badge { font-size: 0.55rem; padding: 5px 10px; }
+  .type-icon { width: 14px; height: 14px; }
+  .stat-row { max-width: 260px; }
+  .evo-sprite { width: 52px; height: 52px; }
 }
 
 @media (max-width: 400px) {
-  body {
-    padding: 0.5rem;
-  }
-
-  .title {
-    font-size: 1rem;
-  }
-
-  .pokedex-screen {
-    padding: 0.75rem;
-  }
-
-  #sprite {
-    width: 100px;
-    height: 100px;
-  }
-
-  p {
-    font-size: 0.5rem;
-  }
+  body { padding: 0.5rem; }
+  .title { font-size: 1rem; }
+  .pokedex-screen { padding: 0.75rem; }
+  #sprite { width: 100px; height: 100px; }
+  p { font-size: 0.5rem; }
+  .evo-sprite { width: 44px; height: 44px; }
 }
 
 @keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.5; }
 }
 
 .loading #sprite {

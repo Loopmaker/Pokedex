@@ -13,23 +13,82 @@
       <div class="search-box">
         <input type="text" id="search-input" placeholder="Enter Pokémon name or ID" required/>
         <button id="search-button">Search</button>
+        <button id="random-button">? Random</button>
       </div>
 
-      <div class="pokedex-screen">
+      <!-- Inline error message -->
+      <div id="error-message" class="error-message" style="display:none;">
+        <span id="error-text">Pokémon not found!</span>
+      </div>
+
+      <div class="pokedex-screen" id="pokedex-screen">
+
+        <!-- Loading overlay -->
+        <div id="loading-overlay" class="loading-overlay" style="display:none;">
+          <div class="pokeball-loader">
+            <div class="pokeball">
+              <div class="pokeball-top"></div>
+              <div class="pokeball-mid"></div>
+              <div class="pokeball-bottom"></div>
+              <div class="pokeball-btn"></div>
+            </div>
+          </div>
+          <p class="loading-text">Searching...</p>
+        </div>
+
         <h2 id="pokemon-name">No Pokémon yet!</h2>
         <img id="sprite" src="" alt="Sprites" />
         <p class="stat">ID: <span id="pokemon-id"></span></p>
         <p id="weight"></p>
         <p id="height"></p>
         <div id="types"></div>
-        <div class="stats-container">
-          <p class="stat">HP: <span id="hp"></span></p>
-          <p class="stat">Attack: <span id="attack"></span></p>
-          <p class="stat">Defense: <span id="defense"></span></p>
-          <p class="stat">Special-Attack: <span id="special-attack"></span></p>
-          <p class="stat">Special-Defense: <span id="special-defense"></span></p>
-          <p class="stat">Speed: <span id="speed"></span></p>
+
+        <!-- Alternate forms -->
+        <div id="forms-section" class="forms-section" style="display:none;">
+          <h3 class="forms-title">FORMS</h3>
+          <div id="forms-list" class="forms-list"></div>
         </div>
+
+        <div class="stats-container">
+          <!-- Stat bar rows -->
+          <div class="stat-row" id="row-hp">
+            <span class="stat-label">HP</span>
+            <div class="stat-bar-bg"><div class="stat-bar" id="bar-hp"></div></div>
+            <span class="stat-val" id="val-hp"></span>
+          </div>
+          <div class="stat-row" id="row-attack">
+            <span class="stat-label">ATK</span>
+            <div class="stat-bar-bg"><div class="stat-bar" id="bar-attack"></div></div>
+            <span class="stat-val" id="val-attack"></span>
+          </div>
+          <div class="stat-row" id="row-defense">
+            <span class="stat-label">DEF</span>
+            <div class="stat-bar-bg"><div class="stat-bar" id="bar-defense"></div></div>
+            <span class="stat-val" id="val-defense"></span>
+          </div>
+          <div class="stat-row" id="row-sp-attack">
+            <span class="stat-label">SpATK</span>
+            <div class="stat-bar-bg"><div class="stat-bar" id="bar-sp-attack"></div></div>
+            <span class="stat-val" id="val-sp-attack"></span>
+          </div>
+          <div class="stat-row" id="row-sp-defense">
+            <span class="stat-label">SpDEF</span>
+            <div class="stat-bar-bg"><div class="stat-bar" id="bar-sp-defense"></div></div>
+            <span class="stat-val" id="val-sp-defense"></span>
+          </div>
+          <div class="stat-row" id="row-speed">
+            <span class="stat-label">SPD</span>
+            <div class="stat-bar-bg"><div class="stat-bar" id="bar-speed"></div></div>
+            <span class="stat-val" id="val-speed"></span>
+          </div>
+        </div>
+
+        <!-- Evolution chain -->
+        <div id="evolution-section" class="evolution-section" style="display:none;">
+          <h3 class="evo-title">EVOLUTION CHAIN</h3>
+          <div id="evolution-chain" class="evolution-chain"></div>
+        </div>
+
       </div>
     </div>
     
