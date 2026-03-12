@@ -1,10 +1,6 @@
 const API_BASE = "https://pokeapi.co/api/v2";
 
-// ── Request cancellation ──────────────────────────────────────────────────────
-// Tracks the current request so rapid clicks cancel the previous one
-let currentRequestId = 0;
-
-// ── Type data ────────────────────────────────────────────────────────────────
+let currentRequestId = 0; // cancel stale requests when user searches rapidly
 
 const typeColors = {
   normal: "#A8A77A", fire: "#EE8130", water: "#6390F0", electric: "#F7D02C",
@@ -35,9 +31,7 @@ const typeIcons = {
   fairy:    `<img class="type-icon" src="icons/fairy.svg"    alt="Fairy">`
 };
 
-// ── Form label prettifier ─────────────────────────────────────────────────────
-// Strips the base name and returns a clean label e.g. "venusaur-mega" → "MEGA"
-
+// e.g. turn "venusaur-mega" into "MEGA"
 const getFormLabel = (baseName, fullName) => {
   if (fullName === baseName) return "BASE";
   const suffix = fullName.replace(`${baseName}-`, "");
@@ -46,7 +40,6 @@ const getFormLabel = (baseName, fullName) => {
     .toUpperCase();
 };
 
-// Form badge color map
 const formColors = {
   "mega":       "#8e44ad",
   "mega-x":     "#2471a3",
@@ -71,13 +64,12 @@ const formColors = {
 
 const getFormColor = (fullName, baseName) => {
   const suffix = fullName.replace(`${baseName}-`, "").toLowerCase();
+  // find color based on form keyword (mega, alola, galar, etc.)
   for (const [key, color] of Object.entries(formColors)) {
     if (suffix.includes(key)) return color;
   }
-  return "#546e7a"; // default slate
+  return "#546e7a";
 };
-
-// ── Loading & error helpers ──────────────────────────────────────────────────
 
 const showLoading = () => {
   document.getElementById("loading-overlay").style.display = "flex";
@@ -101,8 +93,6 @@ const hideError = () => {
   document.getElementById("error-message").style.display = "none";
 };
 
-// ── Default / reset screen ───────────────────────────────────────────────────
-
 const showDefaultScreen = () => {
   document.getElementById("sprite").style.display         = "none";
   document.getElementById("weight").style.display         = "none";
@@ -114,16 +104,12 @@ const showDefaultScreen = () => {
   document.querySelectorAll("p.stat").forEach(p => p.style.display = "none");
 };
 
-// ── Stat bar color based on value ────────────────────────────────────────────
-
 const statColor = (value) => {
   if (value >= 90)  return "#27ae60";
   if (value >= 60)  return "#f39c12";
   if (value >= 35)  return "#e67e22";
   return "#e74c3c";
 };
-
-// ── Stat bar renderer ────────────────────────────────────────────────────────
 
 const setStatBar = (barId, valId, rowId, value, maxVal = 255) => {
   const row = document.getElementById(rowId);
@@ -144,10 +130,9 @@ const setStatBar = (barId, valId, rowId, value, maxVal = 255) => {
   });
 };
 
-// ── Forms ────────────────────────────────────────────────────────────────────
-
 let currentBaseName = ""; // track base name for form labels
 
+// grab all official variants from species data
 const displayForms = async (pokemonId, currentFormName) => {
   const section  = document.getElementById("forms-section");
   const container = document.getElementById("forms-list");
@@ -164,12 +149,33 @@ const displayForms = async (pokemonId, currentFormName) => {
       return;
     }
 
-    // The base (default) name from species
     currentBaseName = speciesData.name;
 
     section.style.display = "block";
 
-    varieties.forEach(({ pokemon, is_default }) => {
+    // only show actual game forms, no fan-made variants
+    const officialMegas = new Set([
+      "venusaur-mega", "charizard-mega-x", "charizard-mega-y", "blastoise-mega",
+      "beedrill-mega", "pidgeot-mega", "slowbro-mega", "gengar-mega",
+      "kangaskhan-mega", "pinsir-mega", "gyarados-mega", "aerodactyl-mega",
+      "mewtwo-mega-x", "mewtwo-mega-y", "ampharos-mega", "steelix-mega",
+      "scizor-mega", "heracross-mega", "houndoom-mega", "tyranitar-mega",
+      "blaziken-mega", "gardevoir-mega", "mawile-mega", "aggron-mega",
+      "medicham-mega", "manectric-mega", "banette-mega", "absol-mega",
+      "garchomp-mega", "lucario-mega", "abomasnow-mega", "alakazam-mega",
+      "audino-mega", "latias-mega", "latios-mega", "lopunny-mega",
+      "gallade-mega", "diancie-mega", "sableye-mega", "swampert-mega",
+      "sceptile-mega", "altaria-mega", "glalie-mega", "salamence-mega",
+      "metagross-mega", "rayquaza-mega", "groudon-primal", "kyogre-primal",
+      "sharpedo-mega", "camerupt-mega"
+    ]);
+
+    const isOfficialForm = (name) => {
+      if (!name.includes("-mega") && !name.includes("-primal")) return true;
+      return officialMegas.has(name);
+    };
+
+    varieties.filter(({ pokemon }) => isOfficialForm(pokemon.name)).forEach(({ pokemon, is_default }) => {
       const formName  = pokemon.name;
       const label     = getFormLabel(currentBaseName, formName);
       const color     = is_default ? "#2c3e50" : getFormColor(formName, currentBaseName);
@@ -183,7 +189,6 @@ const displayForms = async (pokemonId, currentFormName) => {
       }
 
       badge.addEventListener("click", () => {
-        // Load this form directly — forms use their full slug as the pokemon name
         pokedexForm(formName, pokemonId);
       });
 
@@ -195,8 +200,7 @@ const displayForms = async (pokemonId, currentFormName) => {
     section.style.display = "none";
   }
 };
-
-// ── pokedexForm: load a form without re-fetching evolution chain ──────────────
+// load alternate form, keep using the base species ID for consistency
 
 const pokedexForm = async (formSlug, baseId) => {
   showLoading();
@@ -209,7 +213,6 @@ const pokedexForm = async (formSlug, baseId) => {
     flashScreen();
     displayPokemon(data, baseId);
 
-    // Re-render form badges with updated active state, using the original base ID
     displayForms(baseId, formSlug);
 
   } catch (err) {
@@ -219,97 +222,129 @@ const pokedexForm = async (formSlug, baseId) => {
   }
 };
 
-// ── Evolution chain ──────────────────────────────────────────────────────────
-
-const flattenChain = (chainNode) => {
-  const current = chainNode.species.name;
-  if (!chainNode.evolves_to || chainNode.evolves_to.length === 0) {
-    return [current];
-  }
-  // Follow ALL branches (handles Eevee, split evos, etc.)
-  const branchResults = chainNode.evolves_to.map(next => flattenChain(next));
-  // Pick the longest branch as the main line
-  const longest = branchResults.reduce((a, b) => a.length >= b.length ? a : b);
-  // Include unique names from other branches too
-  const extras = branchResults.flat().filter(n => !longest.includes(n));
-  return [current, ...longest, ...extras];
-};
+const buildChainTree = (chainNode) => ({
+  name: chainNode.species.name,
+  evolvesTo: (chainNode.evolves_to || []).map(buildChainTree)
+});
 
 const fetchEvolutionChain = async (pokemonId) => {
   const speciesRes = await fetch(`${API_BASE}/pokemon-species/${pokemonId}`);
-  if (!speciesRes.ok) throw new Error("Species fetch failed");
+  if (!speciesRes.ok) throw new Error(`Species fetch failed for id: ${pokemonId}`);
   const speciesData = await speciesRes.json();
+
+  if (!speciesData.evolution_chain?.url) throw new Error("No evolution chain URL");
 
   const chainRes = await fetch(speciesData.evolution_chain.url);
   if (!chainRes.ok) throw new Error("Chain fetch failed");
   const chainData = await chainRes.json();
 
-  return flattenChain(chainData.chain);
+  if (!chainData.chain) throw new Error("Chain data malformed");
+
+  return buildChainTree(chainData.chain);
 };
 
+const countNodes = (tree) =>
+  1 + tree.evolvesTo.reduce((sum, child) => sum + countNodes(child), 0);
+
+const makeEvoMember = (name, spriteUrl, currentPokemonName) => {
+  const member = document.createElement("div");
+  member.className = "evo-member";
+  if (name === currentPokemonName) member.classList.add("current-pokemon");
+  member.innerHTML = `
+    ${spriteUrl ? `<img class="evo-sprite" src="${spriteUrl}" alt="${name}">` : ""}
+    <span class="evo-name">${name.toUpperCase()}</span>
+  `;
+  member.addEventListener("click", () => {
+    document.getElementById("search-input").value = name;
+    pokedex(name);
+  });
+  return member;
+};
+
+const collectNames = (tree) => [
+  tree.name,
+  ...tree.evolvesTo.flatMap(collectNames)
+];
+
+// fetch all evolution sprites upfront to avoid waterfall effect
 const displayEvolutionChain = async (currentPokemonId, currentPokemonName) => {
   const section   = document.getElementById("evolution-section");
   const container = document.getElementById("evolution-chain");
   container.innerHTML = "";
 
   try {
-    const evoNames = await fetchEvolutionChain(currentPokemonId);
+    const tree = await fetchEvolutionChain(currentPokemonId);
 
-    if (evoNames.length <= 1) {
+    if (countNodes(tree) <= 1) {
       section.style.display = "none";
       return;
     }
 
-    section.style.display = "block";
+    const allNames = collectNames(tree);
+    const spriteMap = {};
+    await Promise.allSettled(
+      allNames.map(async (name) => {
+        try {
+          const d = await resolvePokemon(name);
+          spriteMap[name] = d.sprites.front_default || "";
+        } catch (_) {
+          spriteMap[name] = "";
+        }
+      })
+    );
 
-    for (let i = 0; i < evoNames.length; i++) {
-      const name = evoNames[i];
-
-      let spriteUrl = "";
-      try {
-        const d = await resolvePokemon(name);
-        spriteUrl = d.sprites.front_default || "";
-      } catch (_) {}
-
+    // Render using prefetched sprites
+    const renderNode = (tree, container) => {
       const member = document.createElement("div");
       member.className = "evo-member";
-      if (name === currentPokemonName) member.classList.add("current-pokemon");
-
+      if (tree.name === currentPokemonName) member.classList.add("current-pokemon");
+      const spriteUrl = spriteMap[tree.name] || "";
       member.innerHTML = `
-        ${spriteUrl ? `<img class="evo-sprite" src="${spriteUrl}" alt="${name}">` : ""}
-        <span class="evo-name">${name.toUpperCase()}</span>
+        ${spriteUrl ? `<img class="evo-sprite" src="${spriteUrl}" alt="${tree.name}">` : ""}
+        <span class="evo-name">${tree.name.toUpperCase()}</span>
       `;
-
       member.addEventListener("click", () => {
-        document.getElementById("search-input").value = name;
-        pokedex(name);
+        document.getElementById("search-input").value = tree.name;
+        pokedex(tree.name);
       });
-
       container.appendChild(member);
 
-      if (i < evoNames.length - 1) {
-        const arrow = document.createElement("span");
-        arrow.className = "evo-arrow";
-        arrow.textContent = "→";
-        container.appendChild(arrow);
+      if (tree.evolvesTo.length === 0) return;
+
+      const arrow = document.createElement("span");
+      arrow.className = "evo-arrow";
+      arrow.textContent = "→";
+      container.appendChild(arrow);
+
+      if (tree.evolvesTo.length === 1) {
+        renderNode(tree.evolvesTo[0], container);
+      } else {
+        const splitCol = document.createElement("div");
+        splitCol.className = "evo-split-col";
+        for (const branch of tree.evolvesTo) {
+          const row = document.createElement("div");
+          row.className = "evo-split-row";
+          renderNode(branch, row);
+          splitCol.appendChild(row);
+        }
+        container.appendChild(splitCol);
       }
-    }
+    };
+
+    section.style.display = "block";
+    renderNode(tree, container);
+
   } catch (err) {
     console.warn("Could not load evolution chain:", err);
     section.style.display = "none";
   }
 };
 
-// ── Resolve a slug to a valid pokemon data object ────────────────────────────
-// Strategy: try direct fetch → species default variety → give up
-
+// try direct fetch for most pokemon, fallback to species endpoint for edge cases
 const resolvePokemon = async (slug, signal) => {
-  // 1. Try direct slug (works for most Pokémon and numeric IDs)
   let res = await fetch(`${API_BASE}/pokemon/${slug}`, { signal });
   if (res.ok) return res.json();
 
-  // 2. Try species endpoint to get the exact default variety URL
-  //    This handles Maushold, Basculin, Tatsugiri, Dudunsparce, etc.
   const speciesRes = await fetch(`${API_BASE}/pokemon-species/${slug}`, { signal });
   if (speciesRes.ok) {
     const speciesData = await speciesRes.json();
@@ -323,10 +358,8 @@ const resolvePokemon = async (slug, signal) => {
   throw new Error("Not found");
 };
 
-// ── Main Pokédex fetch ───────────────────────────────────────────────────────
-
+// main search handler - cancel previous request if user searches again quickly
 const pokedex = async (pokeName) => {
-  // Cancel any in-flight request
   currentRequestId++;
   const thisRequestId = currentRequestId;
   const controller = new AbortController();
@@ -337,11 +370,9 @@ const pokedex = async (pokeName) => {
     const slug = String(pokeName).toLowerCase().trim();
     const data = await resolvePokemon(slug, signal);
 
-    // If a newer request started while we were fetching, discard this result
     if (thisRequestId !== currentRequestId) return;
 
-    // Extract species ID from species URL (e.g. ".../pokemon-species/550/")
-    // This ensures forms like basculin-red-striped use ID 550, not a form-specific ID
+    // use species ID so forms have consistent ID across variants
     const speciesUrl = data.species?.url || "";
     const speciesIdMatch = speciesUrl.match(/pokemon-species\/([\d]+)/);
     const speciesId = speciesIdMatch ? parseInt(speciesIdMatch[1]) : data.id;
@@ -350,20 +381,16 @@ const pokedex = async (pokeName) => {
     flashScreen();
     displayPokemon(data, speciesId);
 
-    // Both forms and evo chain can fire in parallel
     displayForms(speciesId, data.name);
     displayEvolutionChain(speciesId, data.name);
 
   } catch (error) {
-    // Ignore errors from cancelled (stale) requests
     if (error.name === "AbortError") return;
     hideLoading();
     showError("Pokémon not found!");
     console.error("Error:", error);
   }
 };
-
-// ── Display Pokémon ──────────────────────────────────────────────────────────
 
 const displayPokemon = (pokemon, overrideId = null) => {
   document.getElementById("sprite").style.display  = "block";
@@ -374,6 +401,7 @@ const displayPokemon = (pokemon, overrideId = null) => {
 
   document.getElementById("pokemon-name").textContent = pokemon.name.toUpperCase();
   document.getElementById("sprite").src = pokemon.sprites.front_default;
+  // overrideId is the species ID, needed for forms to show correct number
   document.getElementById("pokemon-id").textContent = overrideId ?? pokemon.id;
   const weightKg = (pokemon.weight / 10).toFixed(1);
   const heightM  = (pokemon.height / 10).toFixed(1);
@@ -400,20 +428,15 @@ const displayPokemon = (pokemon, overrideId = null) => {
   setStatBar("bar-speed",      "val-speed",      "row-speed",      getStat("speed"));
 };
 
-// ── Flash effect ─────────────────────────────────────────────────────────────
-
 const flashScreen = () => {
   const flash = document.getElementById("flash");
   flash.style.opacity = 1;
   setTimeout(() => { flash.style.opacity = 0; }, 100);
 };
 
-// ── Search events ────────────────────────────────────────────────────────────
-
 document.getElementById("random-button").addEventListener("click", async () => {
   const randomId = Math.floor(Math.random() * 1025) + 1;
   document.getElementById("search-input").value = randomId;
-  // After loading, update input to show the Pokémon name instead of the ID
   try {
     const data = await resolvePokemon(String(randomId));
     document.getElementById("search-input").value = data.name;
@@ -433,6 +456,5 @@ document.getElementById("search-input").addEventListener("keypress", (e) => {
   }
 });
 
-// ── Init ─────────────────────────────────────────────────────────────────────
 
 showDefaultScreen();

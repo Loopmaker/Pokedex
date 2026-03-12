@@ -11,19 +11,16 @@
       <h1 class="title">POKÉDEX</h1>
       
       <div class="search-box">
-        <input type="text" id="search-input" placeholder="Enter Pokémon name or ID" required/>
+        <input type="text" id="search-input" placeholder="Enter Pokémon name" required/>
         <button id="search-button">Search</button>
         <button id="random-button">? Random</button>
       </div>
 
-      <!-- Inline error message -->
       <div id="error-message" class="error-message" style="display:none;">
         <span id="error-text">Pokémon not found!</span>
       </div>
 
       <div class="pokedex-screen" id="pokedex-screen">
-
-        <!-- Loading overlay -->
         <div id="loading-overlay" class="loading-overlay" style="display:none;">
           <div class="pokeball-loader">
             <div class="pokeball">
@@ -43,14 +40,12 @@
         <p id="height"></p>
         <div id="types"></div>
 
-        <!-- Alternate forms -->
         <div id="forms-section" class="forms-section" style="display:none;">
           <h3 class="forms-title">FORMS</h3>
           <div id="forms-list" class="forms-list"></div>
         </div>
 
         <div class="stats-container">
-          <!-- Stat bar rows -->
           <div class="stat-row" id="row-hp">
             <span class="stat-label">HP</span>
             <div class="stat-bar-bg"><div class="stat-bar" id="bar-hp"></div></div>
@@ -83,7 +78,6 @@
           </div>
         </div>
 
-        <!-- Evolution chain -->
         <div id="evolution-section" class="evolution-section" style="display:none;">
           <h3 class="evo-title">EVOLUTION CHAIN</h3>
           <div id="evolution-chain" class="evolution-chain"></div>
