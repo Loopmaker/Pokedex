@@ -434,7 +434,16 @@ const flashScreen = () => {
   setTimeout(() => { flash.style.opacity = 0; }, 100);
 };
 
-document.getElementById("random-button").addEventListener("click", async () => {
+const randomBtn = document.getElementById("random-button");
+
+randomBtn.addEventListener("click", async () => {
+  randomBtn.disabled = true;
+  randomBtn.textContent = "...";
+  setTimeout(() => {
+    randomBtn.disabled = false;
+    randomBtn.textContent = "? Random";
+  }, 2000);
+
   const randomId = Math.floor(Math.random() * 1025) + 1;
   document.getElementById("search-input").value = randomId;
   try {
