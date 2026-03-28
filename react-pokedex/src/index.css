@@ -98,7 +98,6 @@ button:active {
   opacity: 0.7;
 }
 
-/* ── Error message ────────────────────────────── */
 .error-message {
   background-color: #e74c3c;
   border: 3px solid #0f380f;
@@ -119,7 +118,6 @@ button:active {
   80%       { transform: translateX(4px); }
 }
 
-/* ── Pokédex screen ───────────────────────────── */
 .pokedex-screen {
   background-color: #e0f8d0;
   border: 4px solid #0f380f;
@@ -215,7 +213,6 @@ p {
   filter: drop-shadow(1px 1px 1px rgba(0,0,0,0.3));
 }
 
-/* ── Animated stat bars ───────────────────────── */
 .stat-row {
   display: flex;
   align-items: center;
@@ -251,10 +248,10 @@ p {
 
 .stat-bar {
   height: 100%;
-  width: 0%;                        /* starts at 0 for animation */
+  width: 0%;                       
   border-radius: 2px;
   transition: width 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  background-color: #4caf50;        /* default; JS overrides per value */
+  background-color: #4caf50;        
 }
 
 .stat-val {
@@ -264,7 +261,6 @@ p {
   color: #0f380f;
 }
 
-/* ── Loading overlay ──────────────────────────── */
 .loading-overlay {
   position: fixed;
   inset: 0;
@@ -289,7 +285,6 @@ p {
   50% { opacity: 0; }
 }
 
-/* Poké Ball loader */
 .pokeball {
   width: 60px;
   height: 60px;
@@ -345,8 +340,6 @@ p {
   z-index: 2;
 }
 
-
-/* ── Alternate forms ──────────────────────────── */
 .forms-section {
   width: 100%;
   margin-top: 0.75rem;
@@ -390,7 +383,6 @@ p {
   transform: scale(1.05);
 }
 
-/* ── Evolution chain ──────────────────────────── */
 .evolution-section {
   width: 100%;
   margin-top: 1.5rem;
@@ -467,7 +459,6 @@ p {
   align-self: center;
 }
 
-/* ── Flash ────────────────────────────────────── */
 #flash {
   position: fixed;
   top: 0; left: 0;
@@ -479,7 +470,6 @@ p {
   z-index: 9999;
 }
 
-/* ── Responsive ───────────────────────────────── */
 @media (max-width: 600px) {
   .title { font-size: 1.2rem; margin-bottom: 1rem; }
   .search-box { flex-direction: column; }
@@ -512,3 +502,5 @@ p {
 .loading #sprite {
   animation: pulse 1s infinite;
 }
+
+/* planning to make the ui clean */

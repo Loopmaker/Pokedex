@@ -40,7 +40,6 @@ export const usePokemon = () => {
 
   const requestIdRef = useRef(0);
 
-  // ── Fetch forms list ────────────────────────────────────────────────────────
   const fetchForms = useCallback(async (sid, currentFormName) => {
     try {
       const res = await fetch(`${API_BASE}/pokemon-species/${sid}`);
@@ -52,7 +51,6 @@ export const usePokemon = () => {
     } catch (_) {}
   }, []);
 
-  // ── Fetch evolution chain ───────────────────────────────────────────────────
   const fetchEvoChain = useCallback(async (sid) => {
     try {
       const speciesRes = await fetch(`${API_BASE}/pokemon-species/${sid}`);
@@ -67,7 +65,6 @@ export const usePokemon = () => {
 
       const tree = buildChainTree(chainData.chain);
 
-      // Prefetch all sprites in parallel
       const names = collectNames(tree);
       const spriteMap = {};
       await Promise.allSettled(
@@ -86,7 +83,6 @@ export const usePokemon = () => {
     } catch (_) {}
   }, []);
 
-  // ── Main search ─────────────────────────────────────────────────────────────
   const search = useCallback(async (query) => {
     requestIdRef.current += 1;
     const thisId = requestIdRef.current;
@@ -107,7 +103,6 @@ export const usePokemon = () => {
       setSpeciesId(sid);
       setLoading(false);
 
-      // Fire and forget — don't block card render
       fetchForms(sid, data.name);
       fetchEvoChain(sid);
     } catch (err) {
@@ -117,7 +112,6 @@ export const usePokemon = () => {
     }
   }, [fetchForms, fetchEvoChain]);
 
-  // ── Load a specific form ────────────────────────────────────────────────────
   const loadForm = useCallback(async (formSlug, sid) => {
     setLoading(true);
     setError("");
